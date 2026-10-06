@@ -1,0 +1,5 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro'; import StoryRow from '../../components/StoryRow.astro'; import {getAuthorBySlug,listPublished} from '../../lib/queries';
+const author=getAuthorBySlug(Astro.params.slug!); if(!author) Astro.response.status=404; const stories=author?listPublished({authorSlug:author.slug,perPage:30}).items:[];
+---
+{author?<SiteLayout title={author.name} description={author.bio}><header class="page-head"><div class="container"><div class="eyebrow">{author.role_title}</div><h1>{author.name}</h1><p>{author.bio}</p></div></header><div class="narrow section">{stories.map(a=><StoryRow article={a}/>)}</div></SiteLayout>:<SiteLayout title="Author not found" noindex><div class="narrow empty"><h1>Author not found</h1></div></SiteLayout>}

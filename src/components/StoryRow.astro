@@ -1,0 +1,6 @@
+---
+import type { FullArticle } from '../lib/db'; import { formatDate, readingTime } from '../lib/utils';
+interface Props{article:FullArticle; image?:boolean}
+const {article,image=true}=Astro.props; const href=article.kind==='video'?`/tv/${article.slug}`:`/article/${article.slug}`;
+---
+<article class="story-row"><div><div class="story-kicker">{article.category_name} {article.is_sample===1&&<span class="sample-label">Sample</span>}</div><h3><a href={href}>{article.title}</a></h3>{article.deck&&<p>{article.deck}</p>}<div class="meta"><span>{formatDate(article.published_at!)}</span><span>{article.kind==='video'?(article.video_duration||'Video'):`${readingTime(article.body)} min read`}</span></div></div>{image&&article.image&&<a href={href} tabindex="-1"><img src={article.image} alt={article.image_alt||''} loading="lazy" width="640" height="480" /></a>}</article>

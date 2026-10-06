@@ -1,0 +1,8 @@
+---
+interface Props { name: 'menu'|'search'|'whatsapp'|'arrow'|'close'; size?: number; }
+const { name, size=20 } = Astro.props;
+const paths = {
+ menu:'M3 6h18M3 12h18M3 18h18', search:'m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0', whatsapp:'M20.5 11.5a8.5 8.5 0 0 1-12.6 7.45L3 20.5l1.6-4.7A8.5 8.5 0 1 1 20.5 11.5Zm-11-4c.2-.45.42-.46.75-.46h.63c.2 0 .42.08.55.48l.76 2.08c.1.28.05.53-.12.75l-.67.82a.5.5 0 0 0-.04.6c.45.77 1.15 1.57 2.07 2.12.25.15.47.12.65-.1l.92-1.08c.2-.24.45-.29.72-.17l2.03.95c.3.14.42.33.37.62-.12.74-.53 1.4-1.13 1.8-.65.43-1.52.54-2.42.25-2.06-.67-4.05-2.24-5.17-4.1-.75-1.24-1.2-2.66-.77-3.86Z', arrow:'M5 12h14m-5-5 5 5-5 5', close:'M5 5l14 14M19 5 5 19'
+};
+---
+<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d={paths[name]} /></svg>

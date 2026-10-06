@@ -1,0 +1,29 @@
+---
+import Icon from './Icon.astro';
+import { NAV_CATEGORIES, NAV_MORE, NAV_SECTIONS, SITE } from '../lib/config';
+import { getCategories } from '../lib/queries';
+import { formatDate } from '../lib/utils';
+const categories = getCategories();
+const bySlug = new Map(categories.map(c=>[c.slug,c]));
+const today = formatDate(new Date());
+---
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="top-strip"><div class="container"><span class="date-top">{today} · Nigeria</span><span>Independent local journalism for Ogun communities</span></div></div>
+<header class="masthead">
+  <div class="container masthead-main">
+    <div class="date-lockup"><strong>News. Context. Community.</strong><br><span class="muted">Updated through the day</span></div>
+    <a href="/" class="brand" aria-label="OGCTV home"><span class="brand-mark">OGCTV</span><span class="brand-tag">{SITE.tagline}</span></a>
+    <div class="mast-actions"><a class="tip-link" href="/contact#tip">Send a news tip</a><a class="icon-btn" href="/search" aria-label="Search OGCTV"><Icon name="search" /></a><button class="icon-btn menu-btn" id="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><Icon name="menu" /></button></div>
+  </div>
+  <nav class="main-nav" aria-label="Main navigation"><div class="container nav-row">
+    {NAV_SECTIONS.map(x=><a href={x.href} class:list={{tv:x.label==='TV'}}>{x.label}</a>)}
+    {NAV_CATEGORIES.map(slug=><a href={`/category/${slug}`}>{bySlug.get(slug)?.name ?? slug}</a>)}
+    <span class="nav-spacer"></span>{NAV_MORE.slice(0,3).map(x=><a href={`/category/${x.slug}`}>{x.label}</a>)}
+  </div></nav>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+    <div class="container"><a href="/latest">Latest</a><a href="/breaking">Breaking news</a><a href="/tv">OGCTV TV</a>{categories.map(c=><a href={`/category/${c.slug}`}>{c.name}</a>)}<a href="/about">About</a><a href="/contact">Contact & tips</a></div>
+  </nav>
+</header>
+<script is:inline>
+  const b=document.getElementById('menu-toggle'),m=document.getElementById('mobile-menu');b?.addEventListener('click',()=>{const o=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!o));if(m)m.style.display=o?'none':'block'})
+</script>
