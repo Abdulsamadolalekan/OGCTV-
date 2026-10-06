@@ -1,0 +1,5 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro'; import StoryRow from '../components/StoryRow.astro'; import Pagination from '../components/Pagination.astro'; import {listPublished,getTrending} from '../lib/queries';
+const page=Math.max(1,Number(Astro.url.searchParams.get('page'))||1); const result=listPublished({kind:'all',page,perPage:10}); const trending=getTrending(5);
+---
+<SiteLayout title="Latest news" description="The latest news, reports and video from OGCTV."><header class="page-head"><div class="container"><div class="eyebrow">The newsroom</div><h1>Latest news</h1><p>Reporting, explainers and original video from Ogun State and surrounding communities.</p></div></header><div class="container listing"><div>{result.items.length?result.items.map(a=><StoryRow article={a}/>):<div class="empty">No published stories yet.</div>}<Pagination page={result.page} pages={result.pages} base="/latest?"/></div><aside class="trending"><h2>Most read</h2>{trending.map((a,i)=><article class="trend-item"><span class="trend-num">{i+1}</span><h3><a href={a.kind==='video'?`/tv/${a.slug}`:`/article/${a.slug}`}>{a.title}</a></h3></article>)}</aside></div></SiteLayout>

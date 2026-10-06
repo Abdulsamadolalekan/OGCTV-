@@ -1,0 +1,87 @@
+---
+import Pagination from '../components/Pagination.astro'
+import SiteLayout from '../layouts/SiteLayout.astro'
+import { searchArticles } from '../lib/queries'
+import { formatDate } from '../lib/utils'
+
+const q = (Astro.url.searchParams.get('q') || '').trim().slice(0, 100)
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1)
+const requestedKind = Astro.url.searchParams.get('kind')
+const kind = requestedKind === 'story' || requestedKind === 'video' ? requestedKind : 'all'
+const result = q ? searchArticles(q, page, 12, kind) : null
+const pagingBase = `/search?q=${encodeURIComponent(q)}&kind=${kind}`
+---
+
+<SiteLayout
+  title={q ? `Search results for “${q}”` : 'Search'}
+  description="Search OGCTV articles, headlines, categories and authors."
+  noindex={!!q}
+>
+  <header class="page-head">
+    <div class="container">
+      <div class="eyebrow">Find a story</div>
+      <h1>Search OGCTV</h1>
+      <form class="search-form" action="/search" method="get" role="search">
+        <label class="skip-link" for="q">Search terms</label>
+        <input
+          id="q"
+          name="q"
+          value={q}
+          placeholder="Try “education”, “business” or an author…"
+          maxlength="100"
+          required
+          autofocus
+        />
+        <label class="skip-link" for="kind">Content type</label>
+        <select id="kind" name="kind" aria-label="Content type">
+          <option value="all" selected={kind === 'all'}>All</option>
+          <option value="story" selected={kind === 'story'}>Stories</option>
+          <option value="video" selected={kind === 'video'}>Video</option>
+        </select>
+        <button>Search</button>
+      </form>
+    </div>
+  </header>
+  <div class="narrow section">
+    {q && (
+      <p class="eyebrow">
+        {result?.total || 0} result(s) for “{q}”
+      </p>
+    )}
+    {result?.hits.length ? (
+      <>
+        {result.hits.map((hit) => (
+          <article class="search-hit">
+            <div class="story-kicker">
+              {hit.article.category_name} · {hit.article.kind}
+            </div>
+            <h2>
+              <a
+                href={hit.article.kind === 'video'
+                  ? `/tv/${hit.article.slug}`
+                  : `/article/${hit.article.slug}`}
+                set:html={hit.titleHtml}
+              />
+            </h2>
+            <p set:html={hit.snippetHtml || hit.article.deck} />
+            <div class="meta">
+              <span>{hit.article.author_name}</span>
+              <span>{formatDate(hit.article.published_at!)}</span>
+            </div>
+          </article>
+        ))}
+        <Pagination page={result.page} pages={result.pages} base={pagingBase} />
+      </>
+    ) : q ? (
+      <div class="empty">
+        <strong>No matching stories.</strong>
+        <p>Check the spelling, use fewer words, or browse the latest news.</p>
+        <a class="button" href="/latest">Latest news</a>
+      </div>
+    ) : (
+      <div class="empty">
+        <p>Search headlines, article text, categories, bylines and topics.</p>
+      </div>
+    )}
+  </div>
+</SiteLayout>
