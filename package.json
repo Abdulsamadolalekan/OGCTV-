@@ -1,0 +1,40 @@
+{
+  "name": "ogctv",
+  "version": "1.0.0",
+  "description": "OGCTV — Ogun's digital voice. A Nigerian digital media platform for Ogun State and surrounding communities.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "node ./dist/server/entry.mjs",
+    "start": "node ./dist/server/entry.mjs",
+    "check": "astro check",
+    "lint": "biome check src/lib tests scripts",
+    "format": "biome format --write src tests scripts",
+    "test": "tsx --test tests/*.test.ts",
+    "test:run": "tsx --test tests/*.test.ts",
+    "seed": "node scripts/reset-db.mjs",
+    "verify": "npm run lint && npm run check && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.7",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "astro": "^7.3.6",
+    "better-sqlite3": "^13.0.3",
+    "marked": "^18.1.0",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@biomejs/biome": "^2.5.15",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.0"
+  }
+}

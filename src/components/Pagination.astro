@@ -1,0 +1,5 @@
+---
+interface Props{page:number;pages:number;base:string}
+const {page,pages,base}=Astro.props; const href=(p:number)=>`${base}${base.includes('?')?'&':'?'}page=${p}`;
+---
+{pages>1&&<nav class="pagination" aria-label="Pagination">{page>1&&<a href={href(page-1)}>← Previous</a>}{Array.from({length:Math.min(pages,7)},(_,i)=>i+1).map(p=>p===page?<span class="current" aria-current="page">{p}</span>:<a href={href(p)}>{p}</a>)}{page<pages&&<a href={href(page+1)}>Next →</a>}</nav>}

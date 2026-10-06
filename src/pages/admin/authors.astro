@@ -1,0 +1,91 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { originOk } from '../../lib/auth'
+import { getAuthors, upsertAuthor } from '../../lib/queries'
+
+let message = ''
+let error = ''
+if (Astro.request.method === 'POST') {
+  if (!originOk(Astro.request)) {
+    error = 'Request origin could not be verified.'
+  } else {
+    const form = await Astro.request.formData()
+    try {
+      upsertAuthor({
+        id: Number(form.get('id')) || undefined,
+        name: String(form.get('name') || '').trim(),
+        slug: String(form.get('slug') || ''),
+        role_title: String(form.get('role_title') || ''),
+        bio: String(form.get('bio') || ''),
+        is_active: form.get('is_active') === 'on',
+      })
+      message = 'Author saved.'
+    } catch {
+      error = 'Name and slug must be unique.'
+    }
+  }
+}
+const authors = getAuthors(false)
+---
+
+<AdminLayout title="Authors" message={message} error={error}>
+  <div class="page-title">
+    <div>
+      <h1>Authors & bylines</h1>
+      <p>People and desks shown on published work.</p>
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2>Add author</h2>
+    <form method="post" class="inline-form">
+      <div class="field">
+        <label for="new-author-name">Name</label>
+        <input id="new-author-name" name="name" required />
+      </div>
+      <div class="field">
+        <label for="new-author-slug">Slug</label>
+        <input id="new-author-slug" name="slug" placeholder="Generated from name" />
+      </div>
+      <div class="field">
+        <label for="new-author-role">Role</label>
+        <input id="new-author-role" name="role_title" />
+      </div>
+      <div class="field">
+        <label for="new-author-bio">Bio</label>
+        <input id="new-author-bio" name="bio" />
+      </div>
+      <label class="check"><input name="is_active" type="checkbox" checked /> Active</label>
+      <button class="btn">Add author</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Existing authors</h2>
+    {authors.map((author) => (
+      <form method="post" class="inline-form record-form">
+        <input type="hidden" name="id" value={author.id} />
+        <div class="field">
+          <label for={`author-name-${author.id}`}>Name</label>
+          <input id={`author-name-${author.id}`} name="name" value={author.name} required />
+        </div>
+        <div class="field">
+          <label for={`author-slug-${author.id}`}>Slug</label>
+          <input id={`author-slug-${author.id}`} name="slug" value={author.slug} />
+        </div>
+        <div class="field">
+          <label for={`author-role-${author.id}`}>Role</label>
+          <input id={`author-role-${author.id}`} name="role_title" value={author.role_title} />
+        </div>
+        <div class="field">
+          <label for={`author-bio-${author.id}`}>Bio</label>
+          <input id={`author-bio-${author.id}`} name="bio" value={author.bio} />
+        </div>
+        <label class="check">
+          <input name="is_active" type="checkbox" checked={author.is_active === 1} /> Active
+        </label>
+        <button class="btn secondary">Save</button>
+      </form>
+    ))}
+  </section>
+</AdminLayout>

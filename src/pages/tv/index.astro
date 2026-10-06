@@ -1,0 +1,144 @@
+---
+import SectionHead from '../../components/SectionHead.astro'
+import StoryRow from '../../components/StoryRow.astro'
+import SiteLayout from '../../layouts/SiteLayout.astro'
+import { SITE } from '../../lib/config'
+import {
+  getFeaturedVideo,
+  getProgrammeCounts,
+  listPublished,
+  PROGRAMMES,
+} from '../../lib/queries'
+import { videoEmbed } from '../../lib/utils'
+
+const liveStream = SITE.liveStreamUrl ? videoEmbed(SITE.liveStreamUrl) : null
+const programme = Astro.url.searchParams.get('programme') || undefined
+const featured = getFeaturedVideo()
+const result = listPublished({
+  kind: 'video',
+  programme,
+  excludeIds: !programme && featured ? [featured.id] : [],
+  perPage: 20,
+})
+const counts = getProgrammeCounts()
+const selected = PROGRAMMES.find((item) => item.slug === programme)
+---
+
+<SiteLayout
+  title={selected ? `${selected.name} — OGCTV TV` : 'OGCTV TV'}
+  description="Original video reports, interviews, news clips and programmes from OGCTV."
+  canonical={selected ? `${SITE.url}/tv?programme=${selected.slug}` : undefined}
+>
+  <header class="page-head tv-page-head">
+    <div class="container">
+      <div class="eyebrow">Watch · Listen · Understand</div>
+      <h1>OGCTV TV</h1>
+      <p>Original reports, interviews and community voices from Ogun’s digital newsroom.</p>
+    </div>
+  </header>
+
+  {liveStream && !programme && (
+    <section class="section video-band">
+      <div class="container">
+        <SectionHead title="Live on OGCTV" />
+        <div class="video-player">
+          <iframe
+            src={liveStream.src}
+            title="OGCTV live stream"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen
+          />
+        </div>
+        <p class="eyebrow live-source">Live feed supplied by {liveStream.provider}</p>
+      </div>
+    </section>
+  )}
+
+  {featured && !programme && (
+    <section class="section video-band">
+      <div class="container">
+        <SectionHead title="Featured video" />
+        <div class="video-grid">
+          <article class="video-feature">
+            <a href={`/tv/${featured.slug}`}>
+              {featured.image ? (
+                <img src={featured.image} alt={featured.image_alt} />
+              ) : (
+                <span class="video-poster-empty">OGCTV TV</span>
+              )}
+              {featured.video_url ? (
+                <span class="play" aria-hidden="true" />
+              ) : (
+                <span class="video-status">Programme preview</span>
+              )}
+            </a>
+            <div class="eyebrow">
+              {featured.programme.replaceAll('-', ' ')} · {featured.video_duration}
+            </div>
+            <h3><a href={`/tv/${featured.slug}`}>{featured.title}</a></h3>
+            <p>{featured.deck}</p>
+          </article>
+          <div class="video-desk-note">
+            <div class="eyebrow">From the video desk</div>
+            <h2 class="serif">Stories told where they happen.</h2>
+            <p>
+              Watch field reports, news clips and conversations with the people shaping life
+              across Ogun communities. Videos appear only after the newsroom connects a verified
+              source.
+            </p>
+            <a class="button light" href="/contact#tip">Send a video tip</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section programmes-section">
+    <div class="container">
+      <SectionHead title="Programmes" />
+      <nav class="programme-index" aria-label="OGCTV TV programmes">
+        {PROGRAMMES.map((item) => (
+          <a
+            href={`/tv?programme=${item.slug}`}
+            aria-current={programme === item.slug ? 'page' : undefined}
+          >
+            <span>
+              <strong>{item.name}</strong>
+              <small>{item.description}</small>
+            </span>
+            <span class="programme-count">{counts.get(item.slug) || 0}</span>
+          </a>
+        ))}
+      </nav>
+    </div>
+  </section>
+
+  <section class="section category-band">
+    <div class="container">
+      <SectionHead
+        title={selected ? selected.name : 'Latest videos'}
+        href={programme ? '/tv' : undefined}
+        label="All videos"
+      />
+      <div class="latest-grid">
+        <div>
+          {result.items.length ? (
+            result.items.map((video) => <StoryRow article={video} />)
+          ) : (
+            <div class="empty">
+              <strong>No videos in this programme yet.</strong>
+              <p>New reports will appear here after they are published by the video desk.</p>
+            </div>
+          )}
+        </div>
+        <aside class="trending tv-about">
+          <h2>About OGCTV TV</h2>
+          <p class="serif">
+            Field reports, interviews, short news updates and community stories made for clear,
+            responsible viewing on any screen.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+</SiteLayout>

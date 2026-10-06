@@ -1,0 +1,116 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { originOk } from '../../lib/auth'
+import { deleteCategory, getCategories, upsertCategory } from '../../lib/queries'
+
+let message = ''
+let error = ''
+if (Astro.request.method === 'POST') {
+  if (!originOk(Astro.request)) {
+    error = 'Request origin could not be verified.'
+  } else {
+    const form = await Astro.request.formData()
+    const action = String(form.get('action'))
+    if (action === 'save') {
+      try {
+        upsertCategory({
+          id: Number(form.get('id')) || undefined,
+          name: String(form.get('name') || '').trim(),
+          slug: String(form.get('slug') || ''),
+          description: String(form.get('description') || ''),
+          position: Number(form.get('position')) || 0,
+          is_active: form.get('is_active') === 'on',
+        })
+        message = 'Category saved.'
+      } catch {
+        error = 'Name and slug must be unique.'
+      }
+    } else if (action === 'delete') {
+      const result = deleteCategory(Number(form.get('id')))
+      if (result.ok) message = 'Category deleted.'
+      else error = result.error || 'Could not delete category.'
+    }
+  }
+}
+const categories = getCategories(false)
+---
+
+<AdminLayout title="Categories" message={message} error={error}>
+  <div class="page-title">
+    <div>
+      <h1>Categories</h1>
+      <p>Public sections and navigation labels.</p>
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2>Add category</h2>
+    <form method="post" class="inline-form">
+      <input type="hidden" name="action" value="save" />
+      <div class="field">
+        <label for="new-category-name">Name</label>
+        <input id="new-category-name" name="name" required />
+      </div>
+      <div class="field">
+        <label for="new-category-slug">Slug</label>
+        <input id="new-category-slug" name="slug" placeholder="Generated from name" />
+      </div>
+      <div class="field">
+        <label for="new-category-description">Description</label>
+        <input id="new-category-description" name="description" />
+      </div>
+      <div class="field order-field">
+        <label for="new-category-position">Order</label>
+        <input id="new-category-position" name="position" type="number" value="20" />
+      </div>
+      <label class="check"><input name="is_active" type="checkbox" checked /> Active</label>
+      <button class="btn">Add category</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Existing categories</h2>
+    {categories.map((category) => (
+      <form method="post" class="inline-form record-form">
+        <input type="hidden" name="id" value={category.id} />
+        <div class="field">
+          <label for={`category-name-${category.id}`}>Name</label>
+          <input id={`category-name-${category.id}`} name="name" value={category.name} required />
+        </div>
+        <div class="field">
+          <label for={`category-slug-${category.id}`}>Slug</label>
+          <input id={`category-slug-${category.id}`} name="slug" value={category.slug} />
+        </div>
+        <div class="field">
+          <label for={`category-description-${category.id}`}>Description</label>
+          <input
+            id={`category-description-${category.id}`}
+            name="description"
+            value={category.description}
+          />
+        </div>
+        <div class="field order-field">
+          <label for={`category-position-${category.id}`}>Order</label>
+          <input
+            id={`category-position-${category.id}`}
+            name="position"
+            value={category.position}
+            type="number"
+          />
+        </div>
+        <label class="check">
+          <input name="is_active" type="checkbox" checked={category.is_active === 1} /> Active
+        </label>
+        <button class="btn secondary" name="action" value="save">Save</button>
+        <button
+          class="btn danger"
+          name="action"
+          value="delete"
+          onclick="return confirm('Delete this category?')"
+        >
+          Delete
+        </button>
+      </form>
+    ))}
+  </section>
+</AdminLayout>
