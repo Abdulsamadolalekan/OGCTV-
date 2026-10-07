@@ -1,7 +1,7 @@
 /**
  * One-time seeding of the newsroom: categories, desk bylines and clearly
  * flagged demonstration content (is_sample = 1). Idempotent — safe on every
- * boot. `npm run seed` (scripts/reset-db.mjs) wipes and reseeds.
+ * boot. `npm run db:reset` (scripts/reset-db.mjs) wipes and reseeds.
  */
 
 import { SEED_VERSION, seedArticles, seedAuthors, seedCategories } from '../content/seed-data'

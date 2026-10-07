@@ -21,7 +21,8 @@ npm test          # Node test suite through tsx
 npm run build     # production standalone Node build
 npm run preview   # run the built server
 npm run verify    # lint, type-check, tests and production build
-npm run seed      # delete local runtime data; next start reseeds it
+npm run db:reset             # dry run: shows what removing the local data directory would delete
+npm run db:recover-password  # attended, server-side recovery for a lost newsroom password
 ```
 
 ## Major routes
@@ -62,12 +63,39 @@ rendering rules.
 
 ## Configuration and deployment
 
-- Node 20+ is required.
-- Set `NODE_ENV=production` so the session cookie is Secure.
+- Node 22.12 or newer is required: `astro@7` enforces `>=22.12.0`, and `.npmrc` sets `engine-strict=true` so an older runtime fails at install instead of half-way through a build.
+- Set `NODE_ENV=production` so the session cookie is `Secure`. That also means HTTPS is mandatory off `localhost`: on a plain-HTTP origin a `Secure` cookie is never stored, and signing in loops back to `/admin/login`.
 - Put the application behind HTTPS.
+- `npm run db:reset` refuses to run under `NODE_ENV=production`, and needs `--yes` (plus `--discard-data` when the store holds content). There is no override; restore from backup instead.
 - Set `PUBLIC_SITE_URL` to the confirmed production origin (for example, `https://news.example`) for canonical URLs, social metadata, RSS and sitemap output. No unconfirmed OGCTV domain is assumed.
 - The only confirmed contact shipped is WhatsApp `0806 253 2830`; no email, address or social account is invented.
 - No paid service is required. YouTube/Vimeo and a real livestream are optional future connections.
+
+### If an administrator password is lost
+
+There is no "forgot password" link. OGCTV ships no mail transport, and a reset link handed over any
+other channel (SMS, WhatsApp, a helpdesk ticket) is weaker than the credential it replaces. Recovery is
+therefore an attended, server-side operation:
+
+```bash
+cd /srv/ogctv                                          # the deployment's working copy
+npm run db:recover-password -- --email editor@newsroom.example
+```
+
+The tool prints the absolute database path it will write to, asks for the new passphrase twice with the
+input masked, requires typing `RESET`, then replaces the `scrypt` hash and deletes every session that
+account holds — so a copied cookie dies with the old password. The passphrase is never a command-line
+argument, so it cannot land in shell history, `ps` output, a log or a ticket, and the tool refuses to run
+when its input is a pipe rather than a terminal. Staff who still know their password change it themselves
+at `/admin/account`, which signs out their other devices too.
+
+A self-service reset would require all of the following, and none of it is present today:
+
+1. A transactional mail sender (SES, Postmark, Resend or SMTP) with a dedicated sender domain and SPF, DKIM and DMARC configured.
+2. A `password_resets` table holding a 256-bit token's SHA-256 hash, single-use, expiring in 30 minutes or less, bound to one account and cleared when the password changes.
+3. Rate limits per account and per address, a response that is byte-identical whether or not the address exists, and no token ever written to a log.
+4. The link sent only to the address already on file, a revoke-all-sessions action on use, and a notification to the account holder.
+5. The reset path excluded from reverse-proxy access logs, since query strings are logged by default.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for storage, auth, media, migration boundaries and the production checklist.
 

@@ -1,0 +1,111 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { changePassword, clientIp, login, MIN_PASSWORD_LENGTH, originOk } from '../../lib/auth'
+import { getDb } from '../../lib/db'
+import { formatDateTime } from '../../lib/utils'
+
+// The middleware guarantees a session for /admin/*; the guard is for type truth
+// and for the case where the session row was deleted mid-request.
+const user = Astro.locals.user
+if (!user) return Astro.redirect('/admin/login?next=%2Fadmin%2Faccount', 303)
+
+let message = Astro.url.searchParams.has('updated')
+  ? 'Password changed. Every other device signed in to this account has been signed out.'
+  : ''
+let error = ''
+
+if (Astro.request.method === 'POST') {
+  if (!originOk(Astro.request)) {
+    error = 'Request origin could not be verified.'
+  } else {
+    const form = await Astro.request.formData()
+    const current = String(form.get('current') || '')
+    const replacement = String(form.get('password') || '')
+    const confirm = String(form.get('confirm') || '')
+    if (replacement !== confirm) {
+      error = 'The two new passwords do not match.'
+    } else {
+      const result = await changePassword(user.id, current, replacement)
+      if (!result.ok) {
+        error = result.error
+      } else {
+        // changePassword wiped this account's sessions, including this request's
+        // cookie, so sign this browser back in with the new password.
+        await login(Astro.cookies, user.email, replacement, clientIp(Astro.request))
+        return Astro.redirect('/admin/account?updated=1', 303)
+      }
+    }
+  }
+}
+
+const record = getDb()
+  .prepare('SELECT created_at, last_login_at FROM users WHERE id = ?')
+  .get(user.id) as { created_at: string; last_login_at: string | null } | undefined
+const activeSessions = getDb()
+  .prepare('SELECT COUNT(*) AS n FROM sessions WHERE user_id = ?')
+  .get(user.id) as { n: number }
+---
+
+<AdminLayout title="Account" message={message} error={error}>
+  <div class="page-title">
+    <div>
+      <h1>Your account</h1>
+      <p>Sign-in details for the newsroom, and the password that protects it.</p>
+    </div>
+    <a class="btn" href="/admin">Back to overview</a>
+  </div>
+
+  <section class="panel">
+    <h2>Sign-in details</h2>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><th scope="row">Name</th><td>{user.name}</td></tr>
+          <tr><th scope="row">Email</th><td>{user.email}</td></tr>
+          <tr><th scope="row">Role</th><td>{user.role}</td></tr>
+          <tr><th scope="row">Account created</th><td>{record ? formatDateTime(record.created_at) : '—'}</td></tr>
+          <tr>
+            <th scope="row">Last sign-in</th>
+            <td>{record?.last_login_at ? `${formatDateTime(record.last_login_at)} WAT` : 'This session is the first'}</td>
+          </tr>
+          <tr><th scope="row">Active sessions</th><td>{activeSessions.n}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Change password</h2>
+    <form method="post" autocomplete="off">
+      <div class="field">
+        <label for="current">Current password</label>
+        <input id="current" name="current" type="password" required autocomplete="current-password" />
+      </div>
+      <div class="field">
+        <label for="password">New password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          minlength={MIN_PASSWORD_LENGTH}
+          autocomplete="new-password"
+        />
+        <small>At least {MIN_PASSWORD_LENGTH} characters. A password manager phrase is best.</small>
+      </div>
+      <div class="field">
+        <label for="confirm">Repeat new password</label>
+        <input id="confirm" name="confirm" type="password" required autocomplete="new-password" />
+      </div>
+      <button class="btn" type="submit">Change password</button>
+    </form>
+    <p class="field">
+      <small>
+        Changing the password signs out every other device. <strong>OGCTV never emails password
+        resets.</strong> If a passphrase is lost, an administrator with access to the server runs
+        <code>npm run db:recover-password</code> there and enters a replacement twice at the prompt —
+        the password is never typed into a command line, a shell history entry or a ticket.
+      </small>
+    </p>
+  </section>
+</AdminLayout>

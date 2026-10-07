@@ -10,6 +10,10 @@
  *
  * The first newsroom account is created through the one-time /admin/setup
  * flow when no users exist. Credentials are never stored in code.
+ *
+ * Staff change their own password in /admin/account. A lost password is recovered
+ * by running `npm run db:recover-password` on the machine that holds the database —
+ * there is no mail transport in this product, so there is no emailed reset link.
  */
 import { scrypt as _scrypt, createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 import type { AstroCookies } from 'astro'
@@ -170,6 +174,72 @@ export async function login(
 
   setSessionCookie(cookies, token, now + SESSION_TTL_MS)
   return { ok: true }
+}
+
+/** The password policy the newsroom enforces, in one place. */
+export const MIN_PASSWORD_LENGTH = 12
+
+function passwordProblem(password: string): string {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Use at least ${MIN_PASSWORD_LENGTH} characters for the password.`
+  }
+  if (password.length > 400) return 'That password is too long.'
+  return ''
+}
+
+/**
+ * Change the signed-in user's own password. The current password is verified
+ * before anything is written, and every session belonging to the account is then
+ * destroyed — so the person who just changed it signs every other device out and
+ * has to log this one back in.
+ */
+export async function changePassword(
+  userId: number,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ ok: true; signedOut: number } | { ok: false; error: string }> {
+  const db = getDb()
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as UserRow | undefined
+  if (!user) return { ok: false, error: 'This account no longer exists. Sign in again.' }
+  if (!(await verifyPassword(currentPassword, user.password_hash))) {
+    return { ok: false, error: 'Your current password is not correct.' }
+  }
+  const problem = passwordProblem(newPassword)
+  if (problem) return { ok: false, error: problem }
+  if (newPassword === currentPassword) {
+    return { ok: false, error: 'Choose a password different from the one you entered above.' }
+  }
+  const hash = await hashPassword(newPassword)
+  return db.transaction(() => {
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, userId)
+    const info = db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId)
+    return { ok: true as const, signedOut: info.changes }
+  })()
+}
+
+/**
+ * Recovery for a lost password, reached only through `npm run db:recover-password`
+ * on the machine that holds the database. There is deliberately no emailed reset
+ * link: the product has no mail transport, and a link handed over by any other
+ * channel would be weaker than the credential it replaces. See README.
+ */
+export async function resetPasswordForEmail(
+  email: string,
+  newPassword: string,
+): Promise<{ ok: true; name: string; signedOut: number } | { ok: false; error: string }> {
+  const problem = passwordProblem(newPassword)
+  if (problem) return { ok: false, error: problem }
+  const db = getDb()
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim()) as
+    | UserRow
+    | undefined
+  if (!user) return { ok: false, error: 'No newsroom account uses that email address.' }
+  const hash = await hashPassword(newPassword)
+  return db.transaction(() => {
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, user.id)
+    const info = db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id)
+    return { ok: true as const, name: user.name, signedOut: info.changes }
+  })()
 }
 
 export function logout(cookies: AstroCookies, token: string | undefined) {

@@ -5,7 +5,8 @@
   "type": "module",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0",
+    "npm": ">=9.6.5"
   },
   "scripts": {
     "dev": "astro dev",
@@ -18,7 +19,8 @@
     "test": "tsx --test tests/*.test.ts",
     "test:run": "tsx --test tests/*.test.ts",
     "brand:assets": "node scripts/build-brand-assets.mjs",
-    "seed": "node scripts/reset-db.mjs",
+    "db:reset": "node scripts/reset-db.mjs",
+    "db:recover-password": "tsx scripts/recover-password.mjs",
     "verify": "npm run lint && npm run check && npm run test && npm run build"
   },
   "dependencies": {
