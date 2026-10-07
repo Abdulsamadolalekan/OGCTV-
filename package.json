@@ -17,6 +17,7 @@
     "format": "biome format --write src tests scripts",
     "test": "tsx --test tests/*.test.ts",
     "test:run": "tsx --test tests/*.test.ts",
+    "brand:assets": "node scripts/build-brand-assets.mjs",
     "seed": "node scripts/reset-db.mjs",
     "verify": "npm run lint && npm run check && npm run test && npm run build"
   },

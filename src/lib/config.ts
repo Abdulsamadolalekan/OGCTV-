@@ -10,14 +10,37 @@ export const SITE = {
   name: 'OGCTV',
   tagline: "Ogun's digital voice.",
   /**
-   * Official OGCTV logo. This is the master artwork exactly as supplied —
-   * never re-encoded, trimmed or recoloured. Every surface references this
-   * path so there is one source of truth for the mark.
+   * The mark every surface renders. Derived from LOGO_MASTER by
+   * `node scripts/build-brand-assets.mjs`: the black export band is dropped
+   * and the artwork is scaled by exactly 1/3 as lossless PNG, so its aspect
+   * ratio is unchanged and nothing is cropped, stretched or recoloured.
+   * It is committed, not generated at build time.
    */
-  logo: '/brand/ogctv-official-logo.jpg',
-  /** Natural pixel size of the master, used to lock aspect ratio in markup. */
-  logoWidth: 1944,
-  logoHeight: 1920,
+  logo: '/brand/ogctv-official-logo-trimmed.png',
+  /** Natural pixel size of the rendered mark — locks aspect ratio in markup. */
+  logoWidth: 648,
+  logoHeight: 631,
+  /**
+   * The approved master artwork as supplied by the newsroom, kept byte-for-byte
+   * and never written to by the generator. Source of truth for any re-derivation.
+   */
+  logoMaster: '/brand/ogctv-official-logo.jpg',
+  /** Share-card image (1.91:1) so link previews are never cropped by the platform. */
+  logoSocial: '/brand/og-default.jpg',
+  logoSocialWidth: 1200,
+  logoSocialHeight: 630,
+  /** Site icons, contained on white from the same derivation. */
+  logoIcons: {
+    favicon32: '/icons/favicon-32.png',
+    favicon48: '/icons/favicon-48.png',
+    appleTouch180: '/icons/apple-touch-icon-180.png',
+  },
+  /**
+   * Empty canvas below the artwork, as a fraction of the rendered mark's height
+   * (rows 460-631 of 631). Used in CSS to optically centre the mark without
+   * touching the asset. Regenerate if the master changes.
+   */
+  logoBottomBand: 0.271,
   description:
     'OGCTV is a Nigerian digital media platform reporting on Ogun State and surrounding communities — breaking news, politics, business, education, community stories and original video.',
   /** Canonical origin. Change when deploying to a real domain. */

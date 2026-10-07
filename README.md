@@ -48,12 +48,17 @@ Authentication uses scrypt password hashes and server-side sessions. Runtime con
 
 ## Brand assets
 
-The official OGCTV logo lives at `public/brand/ogctv-official-logo.jpg` and is referenced from
-`SITE.logo` in `src/lib/config.ts`. It is the approved master artwork, stored byte-for-byte as
-supplied: nothing resizes, crops, recolours or re-encodes it, and the build never regenerates it.
-Header, mobile header, footer, favicon, Open Graph metadata and the newsroom CMS all point at that
-single file. See [docs/BRANDING.md](docs/BRANDING.md) for the checksum, every integration point,
-and the rendering rules.
+The approved master artwork lives at `public/brand/ogctv-official-logo.jpg` and is stored
+byte-for-byte as supplied — its checksum and size are pinned by `tests/brand.test.ts`, and nothing
+in the build ever writes to it. The mark the site renders is a committed derivation of it
+(`public/brand/ogctv-official-logo-trimmed.png`, plus PNG site icons and a 1200×630 share card),
+produced losslessly at exactly 1/3 scale with the same aspect ratio by
+`node scripts/build-brand-assets.mjs`.
+
+Header, mobile header, footer, favicon, Open Graph metadata and the newsroom CMS all read the same
+paths from `SITE.logo` / `SITE.logoIcons` / `SITE.logoSocial` in `src/lib/config.ts`.
+See [docs/BRANDING.md](docs/BRANDING.md) for the checksum, every integration point and the
+rendering rules.
 
 ## Configuration and deployment
 
