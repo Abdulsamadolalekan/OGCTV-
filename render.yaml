@@ -1,16 +1,20 @@
 # Render blueprint — a persistent Node web service with a disk, which is what OGCTV needs:
-# a long-running process, a writable SQLite database and an uploads directory.
+# one long-running process, a writable SQLite database and an uploads directory.
 #
-#   Render dashboard → New → Blueprint → pick this repository
-# then set PUBLIC_SITE_URL to the domain Render assigns (or your own domain after you add it),
-# and open /admin/setup once to create the first administrator.
+#   Render dashboard → New → Blueprint → pick this repository → deploy
+#
+# Render's own "Disks" feature backs the mount, so articles, accounts, sessions and media
+# survive restarts and redeploys. Note the two constraints that come with a disk:
+#   * it requires a paid instance type (`plan: starter` here, minimum for a disk);
+#   * a service with a persistent disk cannot be scaled horizontally — which suits this app,
+#     because SQLite in WAL mode and the in-memory login throttle both assume one process.
 services:
   - type: web
     name: ogctv
     runtime: node
     plan: starter
-    region: singapore
-    branch: main
+    region: frankfurt # nearest of Render's regions to the readership; change only at creation
+    branch: main # the branch that carries the branding + hardening + this file
     healthCheckPath: /
     autoDeploy: true
     buildCommand: npm ci && npm run build
@@ -18,16 +22,21 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Render injects PORT; the standalone server reads it. HOST must be reachable from the proxy.
+      # Render injects PORT. HOST must be reachable from Render's proxy.
       - key: HOST
         value: 0.0.0.0
+      # Must live on the disk below, or every redeploy wipes the newsroom.
       - key: OGCTV_DATA_DIR
         value: /var/data/ogctv
-      - key: PUBLIC_SITE_URL
-        value: https://REPLACE-ME.onrender.com
+      # Astro 7 needs >= 22.12; package.json engines + .npmrc engine-strict make a wrong
+      # runtime fail loudly at `npm ci` rather than halfway through `astro build`.
       - key: NODE_VERSION
         value: 22.23.3
-    # The database and uploads must survive restarts and redeploys: a disk, not the container FS.
+      # Prompted for in the dashboard at Blueprint creation and never overwritten by later
+      # applies (sync: false). If you skip it, the app falls back to Render's own
+      # RENDER_EXTERNAL_URL, so canonical/OG/sitemap URLs stay correct either way.
+      - key: PUBLIC_SITE_URL
+        sync: false
     disk:
       name: ogctv-data
       mountPath: /var/data/ogctv

@@ -21,7 +21,7 @@ So a deployment target must provide three things:
 
 | Target | Config in this repo | Notes |
 |---|---|---|
-| Docker host / VPS | `Dockerfile`, `docs/DEPLOYMENT.md` §systemd | mount a volume at `/data`; `-p 4321:4321`; reverse proxy terminates TLS |
+| Docker host / VPS | `Dockerfile` + the systemd unit below | mount a volume at `/data`; `-p 4321:4321`; reverse proxy terminates TLS |
 | [Render](https://render.com) | `render.yaml` | Blueprint → this repo. Uses a persistent **disk**, `npm ci && npm run build`, start `node ./dist/server/entry.mjs`, health check `/` |
 | [Fly.io](https://fly.io) | `fly.toml` | builds this `Dockerfile`, mounts a volume at `/data`, keep exactly one machine |
 | Plain VPS, no Docker | below | `npm ci && npm run build`, systemd unit, nginx/Caddy in front |
@@ -33,6 +33,25 @@ docker volume create ogctv-data
 docker run -d --name ogctv -p 4321:4321 -v ogctv-data:/data \
   -e PUBLIC_SITE_URL=https://your-domain.example ogctv
 ```
+
+### Render (recommended, and the only one that needs no server to own)
+
+`render.yaml` is a Render Blueprint: it creates the service, the disk and the environment in one deploy.
+
+1. Push the branch and open a PR to `main`; deploy from `main` once it is merged (the blueprint pins
+   `branch: main`).
+2. Render dashboard → **New → Blueprint** → pick the repository → Render reads `render.yaml` and shows
+   the `ogctv` web service plus the `ogctv-data` disk → **Apply**.
+3. It prompts for `PUBLIC_SITE_URL` (`sync: false`, so it is never stored in the repo and never
+   overwritten by a later apply). You can leave it: the app falls back to Render's own
+   `RENDER_EXTERNAL_URL`, and canonical/OG/sitemap URLs are correct either way.
+4. Wait for the first deploy, then run the curls in *Verify a deployment* against
+   `https://ogctv.onrender.com` (or your attached domain).
+
+Two properties of a disk-backed service are load-bearing here: it requires a paid instance type
+(`plan: starter`), and it **cannot scale horizontally** — which is what you want, because SQLite in WAL
+mode and the in-memory login throttle both assume one process. Keep `region` as set; Render only lets
+you change it by recreating the service.
 
 ```ini
 # /etc/systemd/system/ogctv.service  (VPS without Docker)
@@ -76,6 +95,7 @@ It is deliberately not done here. On Render/Fly/Docker the same code runs unchan
 |---|---|---|
 | `NODE_ENV` | `production` | `Secure` session cookie; also blocks `npm run db:reset` |
 | `PUBLIC_SITE_URL` | `https://<origin>` | canonical URLs, Open Graph, RSS, sitemap. Unset → `http://localhost:4321` in output |
+| `RENDER_EXTERNAL_URL` | set by Render, build **and** runtime | automatic fallback when `PUBLIC_SITE_URL` is unset; nothing else needs it |
 | `OGCTV_DATA_DIR` | absolute path | where the database and uploads live; defaults to `./data` **relative to the process cwd** |
 | `PORT`, `HOST` | platform-assigned / `0.0.0.0` | standalone server bind |
 
@@ -122,7 +142,7 @@ not arrive over HTTPS (the `Secure` cookie was dropped).
 | `SQLITE_CANTOPEN` / `attempt to write a readonly database` | `OGCTV_DATA_DIR` is read-only, on a network filesystem, or not persisted |
 | Site empty, "admin account missing" after a redeploy | the data directory was ephemeral, or the process started from a different cwd → a fresh empty `./data` |
 | Login works, then you are signed out | `NODE_ENV=production` without HTTPS |
-| Canonical/OG/sitemap URLs say `localhost:4321` | `PUBLIC_SITE_URL` was not set when the server started |
+| Canonical/OG/sitemap URLs say `localhost:4321` | neither `PUBLIC_SITE_URL` nor (on Render) `RENDER_EXTERNAL_URL` was in the **runtime** environment — a build-time-only value is not enough, `SITE.url` is read per request |
 | `403 Cross-site POST form submissions are forbidden` from scripts | Astro's origin guard: send `Sec-Fetch-Site: same-origin` (browsers do this automatically) or omit `Origin` |
 | Login throttled and won't clear | 10 failures per 10 minutes per IP, held in memory — a restart clears it; multiple machines need shared storage |
 

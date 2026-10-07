@@ -43,8 +43,12 @@ export const SITE = {
   logoBottomBand: 0.271,
   description:
     'OGCTV is a Nigerian digital media platform reporting on Ogun State and surrounding communities — breaking news, politics, business, education, community stories and original video.',
-  /** Canonical origin. Change when deploying to a real domain. */
-  url: process.env.PUBLIC_SITE_URL || 'http://localhost:4321',
+  /**
+   * Canonical origin. `PUBLIC_SITE_URL` is the variable to set; `RENDER_EXTERNAL_URL` is
+   * provided automatically by Render's blueprint, so canonical/OG/sitemap URLs are correct
+   * there even if the dashboard prompt is skipped. localhost applies to local development only.
+   */
+  url: process.env.PUBLIC_SITE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:4321',
   locale: 'en-NG',
   /** Timezone used for all displayed timestamps. */
   timezone: 'Africa/Lagos',

@@ -11,7 +11,10 @@ import node from '@astrojs/node';
 // - Genuinely static pages (legal, about, contact, robots) are prerendered.
 // - The server runs anywhere Node runs via the standalone Node adapter.
 export default defineConfig({
-  site: process.env.PUBLIC_SITE_URL || 'http://localhost:4321',
+  // Canonical origin. PUBLIC_SITE_URL is the one you set; RENDER_EXTERNAL_URL is provided by
+  // Render's blueprint, so a Render deploy gets correct canonical/OG/sitemap URLs even when the
+  // dashboard prompt is skipped. localhost only applies to local development.
+  site: process.env.PUBLIC_SITE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:4321',
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   server: {
