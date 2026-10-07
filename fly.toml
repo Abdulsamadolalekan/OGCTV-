@@ -1,0 +1,47 @@
+# Fly.io — a persistent VM, because OGCTV keeps a SQLite database and user uploads on disk.
+#
+#   fly apps create ogctv
+#   fly volume create ogctv_data --app ogctv
+#   fly secrets set PUBLIC_SITE_URL=https://ogctv.example
+#   fly deploy
+#
+# Keep exactly one machine: SQLite on a volume is per-machine, and the login throttle is
+# in-process memory. (`fly scale count 1`, and don't enable autoscaling.)
+# `auto_stop_machines = "stop"` is left off for the same reason: a stopped machine loses the
+# throttle state and adds a cold start in front of a breaking-news desk.
+app = "ogctv"
+primary_region = "cdg"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  HOST = "0.0.0.0"
+  PORT = "4321"
+  NODE_ENV = "production"
+  OGCTV_DATA_DIR = "/data"
+
+[mounts]
+  source = "ogctv_data"
+  destination = "/data"
+
+# Fly mounts volumes as root; the image runs as the unprivileged `node` user, so the mount
+# has to be handed over before the server starts.
+[init]
+  swap_size = "1GB"
+  commands = ["chown -R node:node /data"]
+
+[http_service]
+  internal_port = 4321
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/"

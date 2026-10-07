@@ -71,6 +71,16 @@ rendering rules.
 - The only confirmed contact shipped is WhatsApp `0806 253 2830`; no email, address or social account is invented.
 - No paid service is required. YouTube/Vimeo and a real livestream are optional future connections.
 
+### Where it can run
+
+`astro build` emits a standalone Node server plus `dist/client` assets and **no HTML pages** — every
+public and admin page is rendered by that process, which also keeps its SQLite database and uploads on
+disk. A host therefore needs a long-running Node process, a persistent writable volume and HTTPS.
+`Dockerfile`, `render.yaml` and `fly.toml` in this repository cover the supported paths. Static or
+serverless hosts (Vercel, Netlify, GitHub Pages, S3) cannot serve this build as-is: there is no HTML for
+them to serve, so the platform answers with its own 404, and a read-only ephemeral filesystem cannot hold
+accounts, sessions or media. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ### If an administrator password is lost
 
 There is no "forgot password" link. OGCTV ships no mail transport, and a reset link handed over any

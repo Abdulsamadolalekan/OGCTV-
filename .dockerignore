@@ -1,0 +1,15 @@
+# Build context hygiene: the image installs and builds its own copy.
+node_modules
+dist
+data
+.astro
+.git
+.gitignore
+tests
+docs
+README.md
+*.patch
+*.bundle
+brand-verification
+npm-debug.log*
+.DS_Store
