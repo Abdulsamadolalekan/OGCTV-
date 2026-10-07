@@ -1,0 +1,5 @@
+---
+import { getBreaking } from '../lib/queries'; import { timeAgo } from '../lib/utils';
+const item=getBreaking(1)[0];
+---
+{item&&<aside class="breaking-bar" aria-label="Breaking news"><div class="container breaking-inner"><span class="breaking-label">Breaking</span><a class="breaking-headline" href={`/article/${item.slug}`}>{item.title}</a><time class="breaking-time" datetime={item.breaking_at||item.published_at!}>{timeAgo(item.breaking_at||item.published_at!)}</time></div></aside>}

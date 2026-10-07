@@ -1,0 +1,26 @@
+---
+interface Props {
+  name: 'menu' | 'search'
+  size?: number
+}
+
+const { name, size = 20 } = Astro.props
+const paths = {
+  menu: 'M3 6h18M3 12h18M3 18h18',
+  search: 'm21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+}
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.8"
+  stroke-linecap="square"
+  stroke-linejoin="miter"
+  aria-hidden="true"
+>
+  <path d={paths[name]} />
+</svg>

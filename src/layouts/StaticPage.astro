@@ -1,0 +1,5 @@
+---
+import SiteLayout from './SiteLayout.astro'; interface Props{title:string;deck:string;eyebrow?:string;updated?:string}
+const {title,deck,eyebrow='About OGCTV',updated}=Astro.props;
+---
+<SiteLayout title={title} description={deck}><header class="page-head"><div class="container"><div class="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{deck}</p></div></header><article class="narrow static-copy">{updated&&<p class="meta">Last updated: {updated}</p>}<slot/></article></SiteLayout>

@@ -1,0 +1,163 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { originOk } from '../../lib/auth'
+import { deleteMedia, listMedia, saveUpload, updateMediaMeta } from '../../lib/media'
+
+let message = ''
+let error = ''
+if (Astro.request.method === 'POST') {
+  if (!originOk(Astro.request)) {
+    error = 'Request origin could not be verified.'
+  } else {
+    const form = await Astro.request.formData()
+    const action = String(form.get('action'))
+    if (action === 'upload') {
+      const file = form.get('file')
+      if (file instanceof File) {
+        const result = await saveUpload(
+          { buffer: Buffer.from(await file.arrayBuffer()), type: file.type, name: file.name },
+          {
+            alt: String(form.get('alt') || ''),
+            caption: String(form.get('caption') || ''),
+            credit: String(form.get('credit') || ''),
+          },
+        )
+        if (result.ok) message = `Uploaded ${result.item.filename}`
+        else error = result.error
+      } else {
+        error = 'Choose an image.'
+      }
+    } else if (action === 'delete') {
+      const result = deleteMedia(Number(form.get('id')))
+      if (result.ok) message = 'Media deleted.'
+      else error = result.error || 'Could not delete media.'
+    } else if (action === 'update') {
+      updateMediaMeta(Number(form.get('id')), {
+        alt: String(form.get('alt') || ''),
+        caption: String(form.get('caption') || ''),
+        credit: String(form.get('credit') || ''),
+      })
+      message = 'Media details updated.'
+    }
+  }
+}
+const items = listMedia()
+---
+
+<AdminLayout title="Media" message={message} error={error}>
+  <div class="page-title">
+    <div>
+      <h1>Media library</h1>
+      <p>Upload, optimise and reuse newsroom images.</p>
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2>Upload image</h2>
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="upload" />
+      <div class="editor-grid">
+        <div>
+          <div class="field">
+            <label for="media-file">JPG, PNG, WebP or GIF (max 12 MB)</label>
+            <input
+              id="media-file"
+              name="file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="media-alt">Alt text</label>
+            <input
+              id="media-alt"
+              name="alt"
+              maxlength="300"
+              placeholder="Describe what is visible"
+            />
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label for="media-caption">Caption</label>
+            <input id="media-caption" name="caption" />
+          </div>
+          <div class="field">
+            <label for="media-credit">Credit</label>
+            <input id="media-credit" name="credit" />
+          </div>
+        </div>
+      </div>
+      <button class="btn">Upload & optimise</button>
+    </form>
+  </section>
+
+  {items.length ? (
+    <div class="media-grid media-library">
+      {items.map((item) => (
+        <article class="media-card">
+          <img src={item.path} alt={item.alt} />
+          <div>
+            <strong>{item.filename}</strong><br />
+            <code>{item.path}</code><br />
+            <button type="button" class="btn secondary copy-media" data-media-path={item.path}>
+              Copy image path
+            </button>
+            <p class="media-dimensions">
+              {item.width}×{item.height} · {Math.round(item.size / 1024)} KB
+            </p>
+            <form method="post" class="media-meta-form">
+              <input type="hidden" name="id" value={item.id} />
+              <div class="field">
+                <label for={`media-alt-${item.id}`}>Alt text</label>
+                <input
+                  id={`media-alt-${item.id}`}
+                  name="alt"
+                  value={item.alt}
+                  maxlength="300"
+                />
+              </div>
+              <div class="field">
+                <label for={`media-caption-${item.id}`}>Caption</label>
+                <input
+                  id={`media-caption-${item.id}`}
+                  name="caption"
+                  value={item.caption}
+                  maxlength="300"
+                />
+              </div>
+              <div class="field">
+                <label for={`media-credit-${item.id}`}>Credit</label>
+                <input
+                  id={`media-credit-${item.id}`}
+                  name="credit"
+                  value={item.credit}
+                  maxlength="200"
+                />
+              </div>
+              <div class="actions">
+                <button class="btn secondary" name="action" value="update">Save details</button>
+                <button
+                  class="btn danger"
+                  name="action"
+                  value="delete"
+                  onclick="return confirm('Delete this media item?')"
+                >
+                  Delete
+                </button>
+              </div>
+            </form>
+          </div>
+        </article>
+      ))}
+    </div>
+  ) : (
+    <div class="panel">
+      <p>
+        No uploaded media yet. Seed illustrations live in <code>public/seed-media</code> and are not
+        part of the permanent media library.
+      </p>
+    </div>
+  )}
+</AdminLayout>

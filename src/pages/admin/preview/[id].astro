@@ -1,0 +1,90 @@
+---
+import SiteLayout from '../../../layouts/SiteLayout.astro'
+import { renderMarkdown } from '../../../lib/markdown'
+import { getArticleById } from '../../../lib/queries'
+import { formatDateTime, readingTime, videoEmbed } from '../../../lib/utils'
+
+const article = getArticleById(Number(Astro.params.id))
+if (!article) Astro.response.status = 404
+const embed = article?.video_url ? videoEmbed(article.video_url) : null
+---
+
+{
+  article ? (
+    <SiteLayout
+      title={`Preview: ${article.title}`}
+      description={article.deck}
+      image={article.image}
+      noindex
+    >
+      <div class="demo-notice" role="status">
+        <div class="container">
+          <strong>Newsroom preview</strong>
+          <span>
+            This {article.status} {article.kind} is visible only to signed-in staff.{' '}
+            <a href={`/admin/articles/${article.id}`}>Return to editor →</a>
+          </span>
+        </div>
+      </div>
+      <article class="article-page">
+        <div class="container">
+          <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <a href="/admin">Newsroom</a> / <a href="/admin/articles">Content</a> / Preview
+          </nav>
+          <header class="article-head">
+            <div class="story-kicker">
+              {article.category_name} · {article.kind} · {article.status}
+            </div>
+            <h1>{article.title}</h1>
+            {article.deck && <p class="article-deck">{article.deck}</p>}
+            <div class="byline">By {article.author_name}</div>
+            <div class="meta">
+              <span>{article.published_at ? formatDateTime(article.published_at) : 'Not published'}</span>
+              <span>{readingTime(article.body)} min read</span>
+            </div>
+          </header>
+
+          {article.kind === 'video' ? (
+            <div class="video-player">
+              {embed ? (
+                <iframe
+                  src={embed.src}
+                  title={article.title}
+                  allow="encrypted-media; picture-in-picture"
+                  allowfullscreen
+                />
+              ) : (
+                <div class="video-placeholder">
+                  <h2>Video not connected</h2>
+                  <p>This is how the public availability state will appear.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            article.image && (
+              <figure class="article-hero">
+                <img src={article.image} alt={article.image_alt} />
+                {(article.image_caption || article.image_credit) && (
+                  <figcaption class="caption">
+                    {article.image_caption} {article.image_credit && `— ${article.image_credit}`}
+                  </figcaption>
+                )}
+              </figure>
+            )
+          )}
+
+          <div class="article-layout" style="grid-template-columns:minmax(0,730px);justify-content:center">
+            <div class="article-body" set:html={renderMarkdown(article.body)} />
+          </div>
+        </div>
+      </article>
+    </SiteLayout>
+  ) : (
+    <SiteLayout title="Preview not found" noindex>
+      <div class="narrow empty">
+        <h1>Preview not found</h1>
+        <a class="button" href="/admin/articles">Back to newsroom</a>
+      </div>
+    </SiteLayout>
+  )
+}

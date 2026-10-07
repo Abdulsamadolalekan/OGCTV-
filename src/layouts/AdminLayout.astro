@@ -1,0 +1,101 @@
+---
+import type { SessionUser } from '../lib/auth'
+import '../styles/admin.css'
+
+interface Props {
+  title: string
+  user?: SessionUser
+  message?: string
+  error?: string
+}
+
+const { title, user = Astro.locals.user, message, error } = Astro.props
+const pathname = Astro.url.pathname
+const links = [
+  { label: 'Overview', href: '/admin', exact: true },
+  { label: 'Stories', href: '/admin/articles' },
+  { label: 'New story', href: '/admin/articles/new', exact: true },
+  { label: 'New video', href: '/admin/articles/new?kind=video', exact: true },
+  { label: 'Categories', href: '/admin/categories' },
+  { label: 'Authors', href: '/admin/authors' },
+  { label: 'Media', href: '/admin/media' },
+]
+const isCurrent = (href: string, exact = false) => {
+  const url = new URL(href, Astro.url)
+  if (href === '/admin/articles') {
+    return pathname === '/admin/articles' || /^\/admin\/articles\/\d+$/.test(pathname)
+  }
+  if (exact) return pathname === url.pathname && Astro.url.search === url.search
+  return pathname === url.pathname || pathname.startsWith(`${url.pathname}/`)
+}
+---
+
+<!doctype html>
+<html lang="en-NG">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>{title} · OGCTV Newsroom</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <a class="admin-skip" href="#content">Skip to content</a>
+    {user ? (
+      <>
+        <aside class="admin-sidebar">
+          <a class="admin-brand" href="/admin">
+            OGCTV <small>NEWSROOM</small>
+          </a>
+          <nav aria-label="Newsroom navigation">
+            {links.map((link) => (
+              <a
+                href={link.href}
+                aria-current={isCurrent(link.href, link.exact) ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            ))}
+            <a href="/" target="_blank" rel="noopener">View public site ↗</a>
+          </nav>
+          <form action="/admin/logout" method="post">
+            <button class="logout">Sign out</button>
+          </form>
+        </aside>
+        <div class="admin-shell">
+          <header class="admin-top">
+            <span>{title}</span>
+            <span>{user.name} · {user.role}</span>
+          </header>
+          <main id="content" class="admin-content">
+            {message && <div class="notice success" role="status">{message}</div>}
+            {error && <div class="notice error" role="alert">{error}</div>}
+            <slot />
+          </main>
+        </div>
+      </>
+    ) : (
+      <main id="content" class="auth-shell">
+        {message && <div class="notice success" role="status">{message}</div>}
+        {error && <div class="notice error" role="alert">{error}</div>}
+        <slot />
+      </main>
+    )}
+    <script is:inline>
+      document.addEventListener('click', async (event) => {
+        const button = event.target.closest?.('[data-media-path]')
+        if (!button) return
+        try {
+          await navigator.clipboard.writeText(button.dataset.mediaPath)
+          const original = button.textContent
+          button.textContent = 'Path copied'
+          setTimeout(() => {
+            button.textContent = original
+          }, 1500)
+        } catch {
+          button.textContent = 'Copy failed'
+        }
+      })
+    </script>
+  </body>
+</html>

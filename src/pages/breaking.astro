@@ -1,0 +1,5 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro'; import StoryRow from '../components/StoryRow.astro'; import {getBreaking} from '../lib/queries';
+const items=getBreaking(30);
+---
+<SiteLayout title="Breaking news" description="Verified breaking news and urgent updates from the OGCTV newsroom."><header class="page-head"><div class="container"><div class="eyebrow" style="color:var(--red)">Live desk</div><h1>Breaking news</h1><p>Urgent, verified updates. OGCTV does not label demonstration stories as breaking news.</p></div></header><div class="narrow section">{items.length?items.map(a=><StoryRow article={a}/>):<div class="empty"><strong>No active breaking-news alerts.</strong><p>Breaking labels appear here only when the newsroom has a verified urgent update.</p><a class="button" href="/latest">Read the latest</a></div>}</div></SiteLayout>

@@ -1,0 +1,111 @@
+---
+import { NAV_CATEGORIES, NAV_SECTIONS, SITE } from '../lib/config'
+import { getCategories } from '../lib/queries'
+import { formatDate } from '../lib/utils'
+import Icon from './Icon.astro'
+
+const categories = getCategories()
+const bySlug = new Map(categories.map((category) => [category.slug, category]))
+const today = formatDate(new Date())
+const pathname = Astro.url.pathname
+const current = (href: string) =>
+  href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
+---
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="top-strip">
+  <div class="container">
+    <span class="date-top">{today} · Nigeria</span>
+    <span>Local journalism for Ogun communities</span>
+  </div>
+</div>
+<header class="masthead">
+  <div class="container masthead-main">
+    <div class="date-lockup">
+      <strong>News. Context. Community.</strong><br />
+      <span class="muted">Ogun State & surrounding communities</span>
+    </div>
+    <a href="/" class="brand" aria-label="OGCTV home">
+      <span class="brand-mark">OGCTV</span>
+      <span class="brand-tag">{SITE.tagline}</span>
+    </a>
+    <div class="mast-actions">
+      <a class="tip-link" href="/contact#tip">Send a news tip</a>
+      <a class="icon-btn" href="/search" aria-label="Search OGCTV"><Icon name="search" /></a>
+      <button
+        class="icon-btn menu-btn"
+        id="menu-toggle"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <Icon name="menu" />
+      </button>
+    </div>
+  </div>
+  <nav class="main-nav" aria-label="Main navigation">
+    <div class="container nav-row">
+      {NAV_SECTIONS.map((item) => (
+        <a
+          href={item.href}
+          class:list={{ tv: item.label === 'TV' }}
+          aria-current={current(item.href) ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
+      {NAV_CATEGORIES.map((slug) => {
+        const href = `/category/${slug}`
+        return (
+          <a href={href} aria-current={current(href) ? 'page' : undefined}>
+            {bySlug.get(slug)?.name ?? slug}
+          </a>
+        )
+      })}
+    </div>
+  </nav>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden>
+    <div class="container">
+      <a href="/latest" aria-current={current('/latest') ? 'page' : undefined}>Latest</a>
+      <a href="/breaking" aria-current={current('/breaking') ? 'page' : undefined}>Breaking news</a>
+      <a href="/tv" class="mobile-tv" aria-current={current('/tv') ? 'page' : undefined}>
+        OGCTV TV
+      </a>
+      {categories.map((category) => {
+        const href = `/category/${category.slug}`
+        return (
+          <a href={href} aria-current={current(href) ? 'page' : undefined}>{category.name}</a>
+        )
+      })}
+      <a href="/about" aria-current={current('/about') ? 'page' : undefined}>About</a>
+      <a href="/contact" aria-current={current('/contact') ? 'page' : undefined}>
+        Contact & tips
+      </a>
+    </div>
+  </nav>
+</header>
+<script is:inline>
+  (() => {
+    const button = document.getElementById('menu-toggle')
+    const menu = document.getElementById('mobile-menu')
+    if (!button || !menu) return
+
+    const setOpen = (open) => {
+      button.setAttribute('aria-expanded', String(open))
+      button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu')
+      menu.hidden = !open
+    }
+
+    button.addEventListener('click', () => setOpen(button.getAttribute('aria-expanded') !== 'true'))
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && button.getAttribute('aria-expanded') === 'true') {
+        setOpen(false)
+        button.focus()
+      }
+    })
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) setOpen(false)
+    })
+  })()
+</script>
