@@ -26,7 +26,15 @@ const current = (href: string) =>
       <span class="muted">Ogun State & surrounding communities</span>
     </div>
     <a href="/" class="brand" aria-label="OGCTV home">
-      <span class="brand-mark">OGCTV</span>
+      <img
+        class="brand-logo"
+        src={SITE.logo}
+        width={SITE.logoWidth}
+        height={SITE.logoHeight}
+        alt={`${SITE.name} — ${SITE.tagline}`}
+        loading="eager"
+        decoding="async"
+      />
       <span class="brand-tag">{SITE.tagline}</span>
     </a>
     <div class="mast-actions">

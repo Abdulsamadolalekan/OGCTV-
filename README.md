@@ -46,6 +46,15 @@ The CMS supports drafts, publication, archiving, permanent deletion, story/video
 
 Authentication uses scrypt password hashes and server-side sessions. Runtime content lives under `data/` and is Git-ignored. In production, make this path persistent and back it up. Set `OGCTV_DATA_DIR` to use another location.
 
+## Brand assets
+
+The official OGCTV logo lives at `public/brand/ogctv-official-logo.jpg` and is referenced from
+`SITE.logo` in `src/lib/config.ts`. It is the approved master artwork, stored byte-for-byte as
+supplied: nothing resizes, crops, recolours or re-encodes it, and the build never regenerates it.
+Header, mobile header, footer, favicon, Open Graph metadata and the newsroom CMS all point at that
+single file. See [docs/BRANDING.md](docs/BRANDING.md) for the checksum, every integration point,
+and the rendering rules.
+
 ## Configuration and deployment
 
 - Node 20+ is required.

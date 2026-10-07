@@ -9,6 +9,15 @@
 export const SITE = {
   name: 'OGCTV',
   tagline: "Ogun's digital voice.",
+  /**
+   * Official OGCTV logo. This is the master artwork exactly as supplied —
+   * never re-encoded, trimmed or recoloured. Every surface references this
+   * path so there is one source of truth for the mark.
+   */
+  logo: '/brand/ogctv-official-logo.jpg',
+  /** Natural pixel size of the master, used to lock aspect ratio in markup. */
+  logoWidth: 1944,
+  logoHeight: 1920,
   description:
     'OGCTV is a Nigerian digital media platform reporting on Ogun State and surrounding communities — breaking news, politics, business, education, community stories and original video.',
   /** Canonical origin. Change when deploying to a real domain. */

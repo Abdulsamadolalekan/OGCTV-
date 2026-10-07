@@ -1,5 +1,6 @@
 ---
 import type { SessionUser } from '../lib/auth'
+import { SITE } from '../lib/config'
 import '../styles/admin.css'
 
 interface Props {
@@ -37,7 +38,7 @@ const isCurrent = (href: string, exact = false) => {
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
     <title>{title} · OGCTV Newsroom</title>
-    <link rel="icon" href="/favicon.svg" />
+    <link rel="icon" href={SITE.logo} type="image/jpeg" />
   </head>
   <body>
     <a class="admin-skip" href="#content">Skip to content</a>
@@ -45,7 +46,15 @@ const isCurrent = (href: string, exact = false) => {
       <>
         <aside class="admin-sidebar">
           <a class="admin-brand" href="/admin">
-            OGCTV <small>NEWSROOM</small>
+            <span class="admin-logo">
+              <img
+                src={SITE.logo}
+                width={SITE.logoWidth}
+                height={SITE.logoHeight}
+                alt={`${SITE.name} — ${SITE.tagline}`}
+              />
+            </span>
+            <small>NEWSROOM</small>
           </a>
           <nav aria-label="Newsroom navigation">
             {links.map((link) => (
